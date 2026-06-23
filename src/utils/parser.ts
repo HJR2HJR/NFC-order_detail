@@ -238,8 +238,9 @@ export function parseExportData(rows: any[][]): OrderData[] {
     const addr2 = matchKey(row, ['地址2', 'address 2', 'address2']);
     
     const streetBase = [addr1, addr2].filter(Boolean).join(' ');
-    const stateZip = [state, zip].filter(Boolean).join(', ');
-    const parts = [streetBase, city, stateZip].filter(Boolean);
+    const stateZip = [state, zip].filter(Boolean).join(' ');
+    const cityStateZip = [city, stateZip].filter(Boolean).join(', ');
+    const parts = [streetBase, cityStateZip].filter(Boolean);
     
     // Fallback if the user just has a single address field
     const directAddr = matchKey(row, ['地址', 'ship-address']);
@@ -248,14 +249,14 @@ export function parseExportData(rows: any[][]): OrderData[] {
     if (parts.length > 0) {
        address = parts.join('\n');
        if (directAddr && !address.includes(directAddr)) {
-         address = [directAddr, city, stateZip].filter(Boolean).join('\n');
+         address = [directAddr, cityStateZip].filter(Boolean).join('\n');
        }
     } else if (directAddr) {
        address = directAddr;
     }
 
     if (addressCountry.name && !address.includes(addressCountry.name)) {
-       address = address ? `${address}\n${addressCountry.name}` : addressCountry.name;
+       address = address ? `${address}, ${addressCountry.name}` : addressCountry.name;
     }
 
     const orderStatus = matchKey(row, ['订单状态', 'order-status', 'item-status']);
