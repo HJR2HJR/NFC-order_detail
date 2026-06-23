@@ -236,21 +236,16 @@ export function parseExportData(rows: any[][]): OrderData[] {
     const zip = matchKey(row, ['邮编', 'ship-postal-code', 'postal']);
     const addr1 = matchKey(row, ['地址1', '街道', 'address 1', 'address1']);
     const addr2 = matchKey(row, ['地址2', 'address 2', 'address2']);
+    const directAddr = matchKey(row, ['地址', 'ship-address']);
     
-    const streetBase = [addr1, addr2].filter(Boolean).join(' ');
+    const streetBase = Array.from(new Set([directAddr, addr1, addr2].filter(Boolean))).join(' ');
     const stateZip = [state, zip].filter(Boolean).join(' ');
     const cityStateZip = [city, stateZip].filter(Boolean).join(', ');
     const parts = [streetBase, cityStateZip].filter(Boolean);
     
-    // Fallback if the user just has a single address field
-    const directAddr = matchKey(row, ['地址', 'ship-address']);
-    
     let address = '';
     if (parts.length > 0) {
-       address = parts.join('\n');
-       if (directAddr && !address.includes(directAddr)) {
-         address = [directAddr, cityStateZip].filter(Boolean).join('\n');
-       }
+       address = parts.join(', ');
     } else if (directAddr) {
        address = directAddr;
     }
