@@ -6,7 +6,72 @@ import { Copy, Trash2, Check, Settings, FileSpreadsheet, Search } from 'lucide-r
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { SettingsModal, SiteMappingRule, DEFAULT_MAPPINGS } from './components/SettingsModal';
-import { copyText } from './utils/clipboard';
+
+const EXCEL_COPY_COLUMNS: (keyof OrderData)[] = [
+  'orderId',
+  'purchaseDate',
+  'customerName',
+  'site',
+  'bundleType',
+  'quantity',
+  'address',
+  'remark',
+  'orderStatus'
+];
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function copyOrdersAsExcelTable(orders: OrderData[], plainText: string): Promise<void> {
+  const rows = orders.map(order =>
+    EXCEL_COPY_COLUMNS.map(key => String(order[key] ?? ''))
+  );
+  const html = `<table>${rows.map(row =>
+    `<tr>${row.map(cell => `<td>${escapeHtml(cell).replace(/\r?\n/g, '<br>')}</td>`).join('')}</tr>`
+  ).join('')}</table>`;
+
+  const container = document.createElement('div');
+  container.contentEditable = 'true';
+  container.style.position = 'fixed';
+  container.style.left = '-10000px';
+  container.style.top = '0';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  const selection = window.getSelection();
+  const previousRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  const range = document.createRange();
+  range.selectNodeContents(container);
+
+  try {
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    container.focus();
+
+    if (document.execCommand('copy')) {
+      return;
+    }
+  } finally {
+    selection?.removeAllRanges();
+    if (previousRange) {
+      selection?.addRange(previousRange);
+    }
+    document.body.removeChild(container);
+  }
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(plainText);
+    return;
+  }
+
+  throw new Error('Copy is not available in this browser.');
+}
 
 function applyMappingRulesToOrders(orders: OrderData[], rules: SiteMappingRule[]): OrderData[] {
   return orders.map(o => {
@@ -127,16 +192,18 @@ export default function App() {
     }
   }, [mappingRules]);
 
-  const handleCopyTable = useCallback(() => {
+  const handleCopyTable = useCallback(async () => {
     if (displayedOrders.length === 0) return;
     const text = generateTableText(displayedOrders);
-    copyText(text).then(() => {
+    try {
+      await copyOrdersAsExcelTable(displayedOrders, text);
+      setErrorMsg(null);
       setCopiedState('table');
       setTimeout(() => setCopiedState(null), 2000);
-    }).catch(() => {
+    } catch {
       setErrorMsg('复制失败，请检查浏览器剪贴板权限后重试。');
       setTimeout(() => setErrorMsg(null), 5000);
-    });
+    }
   }, [displayedOrders]);
 
   const handleClear = useCallback(() => {

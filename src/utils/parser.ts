@@ -285,11 +285,12 @@ export function parseExportData(rows: any[][]): OrderData[] {
 }
 
 export function generateTableText(orders: OrderData[]): string {
-  const escapeCell = (val: string) => {
-    if (val.includes('\n') || val.includes('\t') || val.includes('"')) {
-       return `"${val.replace(/"/g, '""')}"`;
+  const escapeCell = (val: unknown) => {
+    const text = String(val ?? '');
+    if (text.includes('\n') || text.includes('\t') || text.includes('"')) {
+       return `"${text.replace(/"/g, '""')}"`;
     }
-    return val;
+    return text;
   };
 
   const rows = orders.map(o => [
