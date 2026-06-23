@@ -6,6 +6,7 @@ import { Copy, Trash2, Check, Settings, FileSpreadsheet, Search } from 'lucide-r
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { SettingsModal, SiteMappingRule, DEFAULT_MAPPINGS } from './components/SettingsModal';
+import { copyText } from './utils/clipboard';
 
 function applyMappingRulesToOrders(orders: OrderData[], rules: SiteMappingRule[]): OrderData[] {
   return orders.map(o => {
@@ -129,9 +130,12 @@ export default function App() {
   const handleCopyTable = useCallback(() => {
     if (displayedOrders.length === 0) return;
     const text = generateTableText(displayedOrders);
-    navigator.clipboard.writeText(text).then(() => {
+    copyText(text).then(() => {
       setCopiedState('table');
       setTimeout(() => setCopiedState(null), 2000);
+    }).catch(() => {
+      setErrorMsg('复制失败，请检查浏览器剪贴板权限后重试。');
+      setTimeout(() => setErrorMsg(null), 5000);
     });
   }, [displayedOrders]);
 

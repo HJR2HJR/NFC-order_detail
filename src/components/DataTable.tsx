@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OrderData, generateColumnText } from '../utils/parser';
 import { Copy, Check, Inbox } from 'lucide-react';
+import { copyText } from '../utils/clipboard';
 
 interface DataTableProps {
   orders: OrderData[];
@@ -13,17 +14,21 @@ export function DataTable({ orders, onRemoveItem }: DataTableProps) {
 
   const handleCopyCell = (text: string, rowIdx: number, colKey: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
+    copyText(text).then(() => {
       setCopiedCell({ row: rowIdx, col: colKey });
       setTimeout(() => setCopiedCell(null), 1500);
+    }).catch(err => {
+      console.error('Failed to copy cell:', err);
     });
   };
 
   const handleCopyCol = (colKey: keyof OrderData) => {
     const text = generateColumnText(orders, colKey);
-    navigator.clipboard.writeText(text).then(() => {
+    copyText(text).then(() => {
       setCopiedCol(colKey);
       setTimeout(() => setCopiedCol(null), 1500);
+    }).catch(err => {
+      console.error('Failed to copy column:', err);
     });
   };
 
@@ -134,7 +139,7 @@ export function DataTable({ orders, onRemoveItem }: DataTableProps) {
                          {renderValue(order, col, isEmptyRow)}
                          {val && (
                            <button
-                             onClick={() => handleCopyCell(val as string, idx, col.key)}
+                             onClick={() => handleCopyCell(String(val), idx, col.key)}
                              className="mt-0.5 shrink-0 rounded-md p-1 text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-slate-900 group-hover:opacity-100 focus:opacity-100"
                              title="复制单元格"
                            >
