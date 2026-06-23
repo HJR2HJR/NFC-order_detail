@@ -254,10 +254,6 @@ export function parseExportData(rows: any[][]): OrderData[] {
        address = directAddr;
     }
 
-    if (customerName && !address.includes(customerName)) {
-       address = `${customerName}\n${address}`;
-    }
-
     if (addressCountry.name && !address.includes(addressCountry.name)) {
        address = address ? `${address}\n${addressCountry.name}` : addressCountry.name;
     }
